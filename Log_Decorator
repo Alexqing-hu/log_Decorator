@@ -1,0 +1,44 @@
+import os
+import time
+import logging
+
+logger = logging.getLogger()
+logger.setLevel(20)
+
+execute_time = time.strftime("%Y_%m_%d")
+
+filepath = '/%s_log.log' % execute_time
+file_dir_path = os.path.dirname(filepath)
+
+if not os.path.exists(file_dir_path):
+    os.makedirs(file_dir_path)
+file_handler = logging.FileHandler(filepath, encoding='utf-8')
+formatter = logging.Formatter("%(asctime)s - 【%(levelname)s】 - %(message)s")
+file_handler.setFormatter(formatter)
+logger.addHandler(file_handler)
+
+
+def log_decorator(message=None):
+    def log_fun(func):
+        def execute_fun(*args, **kwargs):
+            try:
+                if len(args) == 0 and len(kwargs) == 0:
+                    params_data = None
+                else:
+                    params_data = args if args else kwargs if kwargs else None
+                    if str(params_data[0]).find("object") != -1:
+                        params_data = params_data[1:]
+                    if len(params_data) == 0:
+                        params_data = None
+                if params_data is not None:
+                    params_info = "，Execute Arguments：【{0}】".format(str(params_data))
+                else:
+                    params_info = ''
+                execute_result = func(*args, **kwargs)
+                logger.info("【{0}】-".format(func.__name__) + message + "PASS" + params_info)
+                return execute_result
+            except Exception as e:
+                logger.error("【{0}】-".format(func.__name__) + message + "Fail" + params_info + "\n\t" + str(e) + "\n", exc_info=1)
+                raise e
+        return execute_fun
+    return log_fun
